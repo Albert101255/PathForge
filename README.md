@@ -1,8 +1,8 @@
 # PathForge — Pathfinding Visualizer
 
-![PathForge Demo](assets/demo.gif)
-
 An interactive C++17 pathfinding visualizer built with SFML. It lets you draw obstacles, choose a search algorithm, and watch the algorithm explore the grid before reconstructing a path.
+
+> Demo GIF/screenshot: planned. The repository currently does not include one.
 
 ## Algorithms
 
@@ -68,8 +68,6 @@ For a graph with `V` vertices and `E` edges:
 
 ### Linux
 
-Install a compiler, CMake and an SFML development package compatible with the project:
-
 ```bash
 sudo apt update
 sudo apt install build-essential cmake libsfml-dev
@@ -90,7 +88,7 @@ cmake --build build
 
 ## Project status
 
-This is a DSA visualization/learning project. The next useful additions are automated algorithm tests, more maze/grid scenarios, and a short explanation of the implementation decisions for each algorithm.
+This is a DSA visualization/learning project. The next useful additions are automated algorithm tests, more maze/grid scenarios, and a real demo GIF or screenshot.
 
 ## Author
 
