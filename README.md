@@ -2,84 +2,96 @@
 
 ![PathForge Demo](assets/demo.gif)
 
-A high-performance, interactive pathfinding algorithm visualizer built in C++17 using the SFML 3 multimedia library. Designed as a showcase of core Data Structures & Algorithms (DSA) concepts, clean Object-Oriented Architecture, and robust C++ memory management.
+An interactive C++17 pathfinding visualizer built with SFML. It lets you draw obstacles, choose a search algorithm, and watch the algorithm explore the grid before reconstructing a path.
 
-## Features
+## Algorithms
 
-- **Real-Time Visuals**: Watch algorithms search nodes and find optimal paths dynamically.
-- **Multiple Algorithms**:
-  - **A* Search** (Fastest, uses Manhattan distance heuristic)
-  - **Dijkstra's Algorithm** (Guarantees shortest path without heuristics)
-  - **Breadth-First Search (BFS)** (Unweighted shortest path)
-  - **Depth-First Search (DFS)** (Explores as deeply as possible)
-- **Interactive Grid**:
-  - Left-Click & Drag to draw walls/obstacles
-  - Right-Click to erase walls
-  - `S` + Click to place the **Start** node
-  - `E` + Click to place the **End** node
-- **Dynamic Speed Control**: Speed up or slow down the visualization using `+` / `-` keys.
-- **Statistics**: View the number of computation steps and the final path length.
+- **A\*** — uses a heuristic to guide exploration toward the target
+- **Dijkstra** — computes shortest paths for non-negative edge costs
+- **Breadth-First Search (BFS)** — finds a shortest path in an unweighted grid
+- **Depth-First Search (DFS)** — explores deeply but does not guarantee a shortest path
 
-## Technical Highlights (Under the Hood)
-- **Time Complexity Focus:** A* is implemented leveraging heuristic limits, reducing average complexity natively, while Dijkstra holds `O((V+E) log V)` guarantees via `<queue>`.
-- **Memory Safety:** Smart pointers (`std::unique_ptr`) dictate program boundaries and interface polymorphism—no raw `new/delete` memory leaks.
-- **Interface Segregation:** Uses `IPathfinder` interface to decouple frontend SFML UI updates from backend mathematical graph traversal steps, maximizing maintainability.
-- **Performance:** Designed to easily run at a fluid 60FPS lock natively utilizing simple structs instead of bloated objects, maintaining CPU cache hit-rate across the grid allocations.
+A* is often faster than uninformed search when the heuristic is informative, but performance depends on the map, heuristic and implementation.
+
+## What this project demonstrates
+
+- C++17
+- Graph/grid traversal
+- Queues and priority queues
+- Heuristics
+- Object-oriented design
+- SFML rendering/input
+- CMake builds
+- Separation between algorithm logic and visualization
 
 ## Controls
 
 | Action | Input |
 |---|---|
-| Draw Wall | Left-Click (Drag) |
-| Erase Wall | Right-Click |
-| Set Start Node | S + Left-Click |
-| Set End Node | E + Left-Click |
-| Run Algorithm | Spacebar |
-| Reset Path | R |
-| Clear Grid | C |
-| Select Algorithm | 1 (A*), 2 (Dijkstra), 3 (BFS), 4 (DFS) |
-| Adjust Speed | + or - |
+| Draw wall | Left-click / drag |
+| Erase wall | Right-click |
+| Place start | S + left-click |
+| Place end | E + left-click |
+| Run | Space |
+| Reset path | R |
+| Clear grid | C |
+| Select algorithm | 1 A*, 2 Dijkstra, 3 BFS, 4 DFS |
+| Adjust speed | + / - |
 
-## Build Instructions
+## Architecture
 
-### Dependencies (Windows - MSYS2/MinGW)
-This project uses **SFML 3.x**. You can install it on MSYS2 (UCRT64 environment) using:
-```bash
-pacman -S mingw-w64-ucrt-x86_64-sfml
+```text
+Grid / Cell state
+      |
+      v
+Pathfinding algorithm
+      |
+      v
+Search-step updates
+      |
+      v
+SFML renderer / UI
 ```
 
-### Dependencies (Linux)
-Install CMake, compiler, and SFML 3.x dependencies from your package manager:
+The `IPathfinder` abstraction keeps the algorithm implementation separate from the visualization layer so different search strategies can be selected without rewriting the UI.
+
+## Complexity notes
+
+For a graph with `V` vertices and `E` edges:
+
+- BFS: `O(V + E)`
+- DFS: `O(V + E)`
+- Dijkstra with a binary heap: approximately `O((V + E) log V)`
+- A*: worst-case behavior depends on the heuristic and graph, while a useful heuristic can significantly reduce explored nodes in practice
+
+## Build
+
+### Linux
+
+Install a compiler, CMake and an SFML development package compatible with the project:
+
 ```bash
 sudo apt update
 sudo apt install build-essential cmake libsfml-dev
 ```
-*(Note: Ensure your distribution provides SFML 3.x or compile SFML from source).*
 
-### Compiling with CMake
-1. Create a build directory: `mkdir build`
-2. Navigate to it: `cd build`
-3. Configure the project:
+### Windows / MSYS2
+
 ```bash
-cmake -S .. -B . -G "MinGW Makefiles"
+pacman -S mingw-w64-ucrt-x86_64-sfml
 ```
-4. Compile the target:
+
+### Compile
+
 ```bash
-mingw32-make -j8
+cmake -S . -B build
+cmake --build build
 ```
-5. Run the executable: `./PathForge.exe`
 
-## Technologies Used
+## Project status
 
-- **Language:** C++17
-- **Graphics/UI:** SFML 3 (Simple and Fast Multimedia Library)
-- **Build System:** CMake 3.20+
-- **Compiler:** GCC (MinGW-w64 UCRT)
-
-## Architecture
-- **Data Layer:** `Grid` and `Cell` abstractions for scalable graph state management.
-- **Logic / Algorithms:** Modular `IPathfinder` interface enabling plug-and-play algorithm implementations.
-- **Rendering Layer:** Encapsulated `Renderer`, `Sidebar`, and `StatusBar` managing SFML graphical states.
+This is a DSA visualization/learning project. The next useful additions are automated algorithm tests, more maze/grid scenarios, and a short explanation of the implementation decisions for each algorithm.
 
 ## Author
+
 [Albert](https://github.com/Albert101255)
