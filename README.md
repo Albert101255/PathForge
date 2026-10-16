@@ -79,16 +79,21 @@ sudo apt install build-essential cmake libsfml-dev
 pacman -S mingw-w64-ucrt-x86_64-sfml
 ```
 
-### Compile
+### Compile & Test
 
 ```bash
 cmake -S . -B build
 cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
 ## Project status
 
-This is a DSA visualization/learning project. The next useful additions are automated algorithm tests, more maze/grid scenarios, and a real demo GIF or screenshot.
+Includes a headless unit test suite (`tests/test_pathfinding.cpp`) covering `Grid` state management, `BFS`, `DFS`, `Dijkstra`, and `A*` across open grids, obstacles, unreachable targets, `start == end` edge cases, and weighted terrain.
+
+## License
+
+MIT License — see [LICENSE](LICENSE).
 
 ## Author
 

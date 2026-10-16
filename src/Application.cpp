@@ -6,14 +6,22 @@
 #include <iostream>
 
 Application::Application()
+#if SFML_VERSION_MAJOR >= 3
     : window(sf::VideoMode(sf::Vector2u(1200, 800)), "PathForge Pathfinding Visualizer"),
+#else
+    : window(sf::VideoMode(1200, 800), "PathForge Pathfinding Visualizer"),
+#endif
       grid(40, 40),
       renderer(window),
       inputHandler(window, grid),
       sidebar(window, font),
       statusBar(window, font) {
     
+#if SFML_VERSION_MAJOR >= 3
     if (!font.openFromFile("assets/font.ttf")) {
+#else
+    if (!font.loadFromFile("assets/font.ttf")) {
+#endif
         std::cerr << "Error loading font\n";
     }
     
@@ -45,20 +53,21 @@ void Application::run() {
         
         inputHandler.handleEvents();
         
-        if (inputHandler.getSelectedAlgorithm() != 0) { // Check if switched via keys
-            // Logic to check if algo changed can be improved via InputHandler state
-            // For now, let's just use the InputHandler's selectedAlgo
-        }
-        
         update(deltaTime);
         render();
     }
 }
 
 void Application::update(float deltaTime) {
+    if (inputHandler.isRPressed() || inputHandler.isCPressed()) {
+        state = AppState::Idle;
+        steps = 0;
+        inputHandler.resetTriggers();
+    }
+
     // Check for user triggers
     if (inputHandler.isSpacePressed()) {
-        if (state == AppState::Idle) {
+        if (state == AppState::Idle || state == AppState::Done) {
             pathfinder->init(grid);
             state = AppState::Running;
             steps = 0;

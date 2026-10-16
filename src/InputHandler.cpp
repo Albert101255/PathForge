@@ -5,6 +5,7 @@ InputHandler::InputHandler(sf::RenderWindow& window, Grid& grid)
     : window(window), grid(grid) {}
 
 void InputHandler::handleEvents() {
+#if SFML_VERSION_MAJOR >= 3
     while (const std::optional<sf::Event> event = window.pollEvent()) {
         if (event->is<sf::Event::Closed>()) {
             window.close();
@@ -12,6 +13,16 @@ void InputHandler::handleEvents() {
             handleKeyboardInput(*keyPressed);
         }
     }
+#else
+    sf::Event event;
+    while (window.pollEvent(event)) {
+        if (event.type == sf::Event::Closed) {
+            window.close();
+        } else if (event.type == sf::Event::KeyPressed) {
+            handleKeyboardInput(event.key);
+        }
+    }
+#endif
     handleMouseInput();
 }
 
@@ -51,7 +62,11 @@ void InputHandler::handleMouseInput() {
     }
 }
 
+#if SFML_VERSION_MAJOR >= 3
 void InputHandler::handleKeyboardInput(const sf::Event::KeyPressed& event) {
+#else
+void InputHandler::handleKeyboardInput(const sf::Event::KeyEvent& event) {
+#endif
     switch (event.code) {
         case sf::Keyboard::Key::Space:
             spacePressed = true;

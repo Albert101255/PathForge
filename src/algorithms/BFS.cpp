@@ -8,12 +8,14 @@ void BFS::init(Grid& grid) {
     while(!frontier.empty()) frontier.pop();
     
     Cell* start = grid.getStartNode();
-    if (start) {
-        frontier.push(start);
-        start->state = CellState::Open;
-    }
+    Cell* end = grid.getEndNode();
     pathFound = false;
     finished = false;
+    if (start && end) {
+        frontier.push(start);
+    } else {
+        finished = true;
+    }
 }
 
 bool BFS::step() {
@@ -27,6 +29,7 @@ bool BFS::step() {
 
     if (current == grid->getEndNode()) {
         pathFound = true;
+        finished = true;
         Cell* temp = current;
         while (temp) {
             if (temp != grid->getStartNode() && temp != grid->getEndNode()) {
@@ -42,7 +45,8 @@ bool BFS::step() {
     }
 
     for (Cell* neighbor : grid->getNeighbors(current)) {
-        if (neighbor->state == CellState::Empty || neighbor->state == CellState::End) {
+        if ((neighbor->state == CellState::Empty || neighbor->state == CellState::End) &&
+            neighbor != grid->getStartNode() && neighbor->parent == nullptr) {
             neighbor->parent = current;
             if (neighbor->state != CellState::End) {
                 neighbor->state = CellState::Open;

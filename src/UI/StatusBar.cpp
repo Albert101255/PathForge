@@ -9,12 +9,16 @@ void StatusBar::render(const std::string& statusText) {
     float barY = window.getSize().y - barHeight;
 
     sf::RectangleShape bg(sf::Vector2f(barWidth, barHeight));
-    bg.setPosition({0.f, barY});
+    bg.setPosition(sf::Vector2f(0.f, barY));
     bg.setFillColor(sf::Color(20, 20, 40));
     window.draw(bg);
 
+#if SFML_VERSION_MAJOR >= 3
     sf::Text text(font, statusText, 14);
-    text.setPosition({20.f, barY + 10.f});
+#else
+    sf::Text text(statusText, font, 14);
+#endif
+    text.setPosition(sf::Vector2f(20.f, barY + 10.f));
     text.setFillColor(sf::Color(200, 200, 200));
     window.draw(text);
 }

@@ -17,12 +17,14 @@ public:
 
 private:
     Grid* grid = nullptr;
-    struct CellComparator {
-        bool operator()(const Cell* a, const Cell* b) const {
-            return a->gCost > b->gCost; // Min-heap
+    struct QueueEntry {
+        Cell* cell;
+        int gCost;
+        bool operator>(const QueueEntry& other) const {
+            return gCost > other.gCost;
         }
     };
-    std::priority_queue<Cell*, std::vector<Cell*>, CellComparator> frontier;
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> frontier;
     bool pathFound = false;
     bool finished = false;
 };

@@ -6,13 +6,15 @@ void Dijkstra::init(Grid& grid) {
     while(!frontier.empty()) frontier.pop();
     
     Cell* start = grid.getStartNode();
-    if (start) {
-        start->gCost = 0;
-        start->state = CellState::Open;
-        frontier.push(start);
-    }
+    Cell* end = grid.getEndNode();
     pathFound = false;
     finished = false;
+    if (start && end) {
+        start->gCost = 0;
+        frontier.push({start, 0});
+    } else {
+        finished = true;
+    }
 }
 
 bool Dijkstra::step() {
@@ -21,11 +23,24 @@ bool Dijkstra::step() {
         return false;
     }
 
-    Cell* current = frontier.top();
-    frontier.pop();
+    Cell* current = nullptr;
+    while (!frontier.empty()) {
+        QueueEntry top = frontier.top();
+        frontier.pop();
+        if (top.cell->state != CellState::Closed && top.gCost <= top.cell->gCost) {
+            current = top.cell;
+            break;
+        }
+    }
+
+    if (!current) {
+        finished = true;
+        return false;
+    }
 
     if (current == grid->getEndNode()) {
         pathFound = true;
+        finished = true;
         // Backtrack path
         Cell* temp = current;
         while (temp) {
@@ -42,16 +57,16 @@ bool Dijkstra::step() {
     }
 
     for (Cell* neighbor : grid->getNeighbors(current)) {
-        if (neighbor->state == CellState::Wall) continue;
+        if (neighbor->state == CellState::Wall || neighbor->state == CellState::Closed) continue;
 
         int newCost = current->gCost + neighbor->weight;
         if (newCost < neighbor->gCost) {
             neighbor->gCost = newCost;
             neighbor->parent = current;
-            if (neighbor->state != CellState::End) {
+            if (neighbor != grid->getStartNode() && neighbor != grid->getEndNode()) {
                 neighbor->state = CellState::Open;
             }
-            frontier.push(neighbor);
+            frontier.push({neighbor, newCost});
         }
     }
 

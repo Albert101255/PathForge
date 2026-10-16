@@ -34,7 +34,11 @@ private:
     float speedFactor = 1.0f;
 
     void handleMouseInput();
+#if SFML_VERSION_MAJOR >= 3
     void handleKeyboardInput(const sf::Event::KeyPressed& event);
+#else
+    void handleKeyboardInput(const sf::Event::KeyEvent& event);
+#endif
 };
 
 #endif // INPUTHANDLER_HPP

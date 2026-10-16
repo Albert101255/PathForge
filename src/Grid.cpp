@@ -33,18 +33,22 @@ void Grid::clearPath() {
             cell.resetCosts();
         }
     }
+    if (startNode) startNode->state = CellState::Start;
+    if (endNode) endNode->state = CellState::End;
 }
 
 void Grid::setStart(int row, int col) {
     if (!isValid(row, col)) return;
-    if (startNode) startNode->state = CellState::Empty;
+    if (startNode && startNode != endNode) startNode->state = CellState::Empty;
+    else if (startNode && startNode == endNode) endNode->state = CellState::End;
     startNode = &cells[row][col];
     startNode->state = CellState::Start;
 }
 
 void Grid::setEnd(int row, int col) {
     if (!isValid(row, col)) return;
-    if (endNode) endNode->state = CellState::Empty;
+    if (endNode && endNode != startNode) endNode->state = CellState::Empty;
+    else if (endNode && endNode == startNode) startNode->state = CellState::Start;
     endNode = &cells[row][col];
     endNode->state = CellState::End;
 }

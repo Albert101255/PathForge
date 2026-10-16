@@ -2,7 +2,11 @@
 #include <iostream>
 
 Renderer::Renderer(sf::RenderWindow& window) : window(window) {
+#if SFML_VERSION_MAJOR >= 3
     if (!font.openFromFile("assets/font.ttf")) {
+#else
+    if (!font.loadFromFile("assets/font.ttf")) {
+#endif
         // Fallback or error handling
         std::cerr << "Error: Could not load assets/font.ttf\n";
     }
@@ -37,7 +41,6 @@ void Renderer::render(const Grid& grid) {
     sf::Vector2u windowSize = window.getSize();
     // Grid canvas is 80% of window height, stats panel is on the right
     float gridHeight = windowSize.y * 0.8f;
-    float gridWidth = gridHeight; // Keep it square for simplicity or use available width
     float cellSize = gridHeight / rows;
 
     sf::RectangleShape cellRect(sf::Vector2f(cellSize - 1.0f, cellSize - 1.0f));
@@ -45,20 +48,24 @@ void Renderer::render(const Grid& grid) {
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
             const Cell* cell = grid.getCell(r, c);
-            cellRect.setPosition({c * cellSize + 5.0f, r * cellSize + 50.0f}); // Offset for top bar
+            cellRect.setPosition(sf::Vector2f(c * cellSize + 5.0f, r * cellSize + 50.0f)); // Offset for top bar
             cellRect.setFillColor(getCellColor(cell->state));
             window.draw(cellRect);
 
             // Draw weight if > 1
             if (cell->weight > 1) {
-                sf::Text text(font);
-                text.setString(std::to_string(cell->weight));
-                text.setCharacterSize(static_cast<unsigned int>(cellSize * 0.5f));
+#if SFML_VERSION_MAJOR >= 3
+                sf::Text text(font, std::to_string(cell->weight), static_cast<unsigned int>(cellSize * 0.5f));
                 text.setFillColor(sf::Color::White);
-                
                 sf::FloatRect textRect = text.getLocalBounds();
                 text.setOrigin(textRect.getCenter());
-                text.setPosition({c * cellSize + cellSize/2.0f + 5.0f, r * cellSize + cellSize/2.0f + 50.0f});
+#else
+                sf::Text text(std::to_string(cell->weight), font, static_cast<unsigned int>(cellSize * 0.5f));
+                text.setFillColor(sf::Color::White);
+                sf::FloatRect textRect = text.getLocalBounds();
+                text.setOrigin(sf::Vector2f(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f));
+#endif
+                text.setPosition(sf::Vector2f(c * cellSize + cellSize/2.0f + 5.0f, r * cellSize + cellSize/2.0f + 50.0f));
                 
                 window.draw(text);
             }

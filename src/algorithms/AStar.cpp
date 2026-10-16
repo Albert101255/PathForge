@@ -7,14 +7,15 @@ void AStar::init(Grid& grid) {
     
     Cell* start = grid.getStartNode();
     Cell* end = grid.getEndNode();
+    pathFound = false;
+    finished = false;
     if (start && end) {
         start->gCost = 0;
         start->hCost = getHeuristic(start, end);
-        start->state = CellState::Open;
-        frontier.push(start);
+        frontier.push({start, start->fCost(), start->hCost, start->gCost});
+    } else {
+        finished = true;
     }
-    pathFound = false;
-    finished = false;
 }
 
 int AStar::getHeuristic(Cell* a, Cell* b) {
@@ -28,11 +29,24 @@ bool AStar::step() {
         return false;
     }
 
-    Cell* current = frontier.top();
-    frontier.pop();
+    Cell* current = nullptr;
+    while (!frontier.empty()) {
+        QueueEntry top = frontier.top();
+        frontier.pop();
+        if (top.cell->state != CellState::Closed && top.gCost <= top.cell->gCost) {
+            current = top.cell;
+            break;
+        }
+    }
+
+    if (!current) {
+        finished = true;
+        return false;
+    }
 
     if (current == grid->getEndNode()) {
         pathFound = true;
+        finished = true;
         // Backtrack path
         Cell* temp = current;
         while (temp) {
@@ -49,17 +63,17 @@ bool AStar::step() {
     }
 
     for (Cell* neighbor : grid->getNeighbors(current)) {
-        if (neighbor->state == CellState::Wall) continue;
+        if (neighbor->state == CellState::Wall || neighbor->state == CellState::Closed) continue;
 
         int newGCost = current->gCost + neighbor->weight;
         if (newGCost < neighbor->gCost) {
             neighbor->gCost = newGCost;
             neighbor->hCost = getHeuristic(neighbor, grid->getEndNode());
             neighbor->parent = current;
-            if (neighbor->state != CellState::End) {
+            if (neighbor != grid->getStartNode() && neighbor != grid->getEndNode()) {
                 neighbor->state = CellState::Open;
             }
-            frontier.push(neighbor);
+            frontier.push({neighbor, neighbor->fCost(), neighbor->hCost, neighbor->gCost});
         }
     }
 
