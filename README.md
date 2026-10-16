@@ -1,8 +1,8 @@
 # PathForge — Pathfinding Visualizer
 
-An interactive C++17 pathfinding visualizer built with SFML. It lets you draw obstacles, choose a search algorithm, and watch the algorithm explore the grid before reconstructing a path.
+**Live Interactive Visualizer:** [https://albert101255.github.io/PathForge/](https://albert101255.github.io/PathForge/)
 
-> Demo GIF/screenshot: planned. The repository currently does not include one.
+An interactive C++17 pathfinding visualizer built with SFML (with a companion interactive web visualizer on GitHub Pages). It lets you draw obstacles, paint weighted terrain, choose a search algorithm, and watch the algorithm explore the grid before reconstructing a path.
 
 ## Algorithms
 
