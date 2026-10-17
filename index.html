@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PathForge — Interactive Pathfinding Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-dim: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #1f6feb;
+      --start: #2ea043;
+      --end: #f85149;
+      --wall: #484f58;
+      --weight: #d29922;
+      --visited: #1f6feb;
+      --path: #a371f7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand h1 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand .badge {
+      font-size: 0.7rem;
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    select, button, input[type="range"] {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #21262d;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    select:focus, button:focus { outline: none; border-color: var(--accent); }
+    button:hover { background: #30363d; color: #fff; }
+    button.primary {
+      background: var(--accent);
+      color: #0d1117;
+      font-weight: 600;
+      border-color: var(--accent);
+    }
+    button.primary:hover { background: var(--accent-hover); color: #fff; }
+    button.danger { background: rgba(248, 81, 73, 0.15); color: #f85149; border-color: rgba(248, 81, 73, 0.4); }
+    button.danger:hover { background: #f85149; color: #fff; }
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .speed-control input { width: 80px; }
+    .stats-bar {
+      background: #090d13;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 24px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+    .stat-item { display: flex; gap: 6px; align-items: center; }
+    .stat-val { color: var(--accent); font-weight: 600; }
+    .legend {
+      display: flex;
+      gap: 16px;
+      padding: 8px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-box { width: 14px; height: 14px; border-radius: 3px; }
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      overflow: auto;
+    }
+    canvas {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      cursor: crosshair;
+    }
+    footer {
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      padding: 10px 24px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>PathForge</h1>
+      <span class="badge">C++17 &bull; SFML &bull; Web Demo</span>
+    </div>
+    <div class="toolbar">
+      <select id="algo-select">
+        <option value="astar">A* Search (Manhattan)</option>
+        <option value="dijkstra">Dijkstra's Algorithm</option>
+        <option value="bfs">Breadth-First Search (BFS)</option>
+        <option value="dfs">Depth-First Search (DFS)</option>
+      </select>
+      <select id="tool-select">
+        <option value="wall">Draw Wall (Cost &infin;)</option>
+        <option value="weight">Draw Weighted Terrain (Cost 5)</option>
+        <option value="erase">Eraser</option>
+      </select>
+      <button id="btn-maze">Generate Maze</button>
+      <div class="speed-control">
+        <span>Speed</span>
+        <input type="range" id="speed-slider" min="1" max="100" value="70">
+      </div>
+      <button class="primary" id="btn-visualize">&bull; Visualize</button>
+      <button id="btn-clear-path">Clear Path</button>
+      <button class="danger" id="btn-clear-all">Reset Grid</button>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-item">Algorithm: <span class="stat-val" id="stat-algo">A*</span></div>
+    <div class="stat-item">Nodes Explored: <span class="stat-val" id="stat-visited">0</span></div>
+    <div class="stat-item">Shortest Path Length: <span class="stat-val" id="stat-path-len">0</span></div>
+    <div class="stat-item">Path Cost: <span class="stat-val" id="stat-cost">0</span></div>
+    <div class="stat-item">Time: <span class="stat-val" id="stat-time">0 ms</span></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-box" style="background:var(--start);"></div> Start Node (drag to move)</div>
+    <div class="legend-item"><div class="legend-box" style="background:var(--end);"></div> Target Node (drag to move)</div>
+    <div class="legend-item"><div class="legend-box" style="background:var(--wall);"></div> Obstacle / Wall</div>
+    <div class="legend-item"><div class="legend-box" style="background:var(--weight); opacity:0.8;"></div> Weighted Terrain (Cost 5)</div>
+    <div class="legend-item"><div class="legend-box" style="background:var(--visited);"></div> Explored Frontier</div>
+    <div class="legend-item"><div class="legend-box" style="background:var(--path);"></div> Shortest Path</div>
+  </div>
+
+  <main>
+    <canvas id="grid-canvas" width="1000" height="550"></canvas>
+  </main>
+
+  <footer>
+    <div>Interactive Web Demonstration of <strong>PathForge</strong> — Algorithmic engine ported from C++17 SFML architecture.</div>
+    <div><a href="https://github.com/Albert101255/PathForge" target="_blank">&rarr; View C++ Source on GitHub</a></div>
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('grid-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const COLS = 40;
+    const ROWS = 22;
+    const CELL_SIZE = 25;
+
+    let start = { r: 10, c: 5 };
+    let end = { r: 10, c: 34 };
+    let grid = []; // 0=empty, 1=wall, 5=weight
+    let visitedCells = new Set();
+    let pathCells = [];
+    let isMouseDown = false;
+    let dragging = null; // 'start' | 'end' | null
+    let currentTool = 'wall';
+    let isRunning = false;
+
+    function initGrid() {
+      grid = [];
+      for (let r = 0; r < ROWS; r++) {
+        grid[r] = [];
+        for (let c = 0; c < COLS; c++) {
+          grid[r][c] = 0;
+        }
+      }
+      visitedCells.clear();
+      pathCells = [];
+      updateStats(0, 0, 0, 0);
+      draw();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const x = c * CELL_SIZE;
+          const y = r * CELL_SIZE;
+          const key = `${r},${c}`;
+
+          // Background fill
+          if (grid[r][c] === 1) {
+            ctx.fillStyle = '#484f58';
+          } else if (grid[r][c] === 5) {
+            ctx.fillStyle = '#b08800';
+          } else if (pathCells.includes(key)) {
+            ctx.fillStyle = '#a371f7';
+          } else if (visitedCells.has(key)) {
+            ctx.fillStyle = '#1f6feb';
+          } else {
+            ctx.fillStyle = '#0d1117';
+          }
+          ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+
+          // Grid border
+          ctx.strokeStyle = '#21262d';
+          ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+
+          // Node icons
+          if (r === start.r && c === start.c) {
+            ctx.fillStyle = '#2ea043';
+            ctx.beginPath();
+            ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, CELL_SIZE/2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px JetBrains Mono';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('S', x + CELL_SIZE/2, y + CELL_SIZE/2);
+          } else if (r === end.r && c === end.c) {
+            ctx.fillStyle = '#f85149';
+            ctx.beginPath();
+            ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, CELL_SIZE/2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px JetBrains Mono';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('E', x + CELL_SIZE/2, y + CELL_SIZE/2);
+          } else if (grid[r][c] === 5 && !pathCells.includes(key)) {
+            ctx.fillStyle = '#ffd33d';
+            ctx.font = '10px JetBrains Mono';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('5', x + CELL_SIZE/2, y + CELL_SIZE/2);
+          }
+        }
+      }
+    }
+
+    function getNeighbors(r, c) {
+      const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      const res = [];
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && grid[nr][nc] !== 1) {
+          res.push({ r: nr, c: nc, cost: grid[nr][nc] === 5 ? 5 : 1 });
+        }
+      }
+      return res;
+    }
+
+    function manhattan(r1, c1, r2, c2) {
+      return Math.abs(r1 - r2) + Math.abs(c1 - c2);
+    }
+
+    function updateStats(visited, len, cost, time) {
+      document.getElementById('stat-algo').innerText = document.getElementById('algo-select').selectedOptions[0].text;
+      document.getElementById('stat-visited').innerText = visited;
+      document.getElementById('stat-path-len').innerText = len;
+      document.getElementById('stat-cost').innerText = cost;
+      document.getElementById('stat-time').innerText = `${time.toFixed(1)} ms`;
+    }
+
+    async function runSearch() {
+      if (isRunning) return;
+      isRunning = true;
+      visitedCells.clear();
+      pathCells = [];
+      draw();
+
+      const algo = document.getElementById('algo-select').value;
+      const speed = 101 - parseInt(document.getElementById('speed-slider').value, 10);
+      const delay = Math.max(1, speed / 3);
+
+      const t0 = performance.now();
+      let found = false;
+      const parent = {};
+      const dist = {};
+      const startKey = `${start.r},${start.c}`;
+      const endKey = `${end.r},${end.c}`;
+
+      if (algo === 'bfs') {
+        const queue = [{ r: start.r, c: start.c }];
+        visitedCells.add(startKey);
+
+        while (queue.length > 0) {
+          const curr = queue.shift();
+          const currKey = `${curr.r},${curr.c}`;
+
+          if (curr.r === end.r && curr.c === end.c) {
+            found = true;
+            break;
+          }
+
+          for (const n of getNeighbors(curr.r, curr.c)) {
+            const nKey = `${n.r},${n.c}`;
+            if (!visitedCells.has(nKey)) {
+              visitedCells.add(nKey);
+              parent[nKey] = curr;
+              queue.push(n);
+            }
+          }
+
+          if (visitedCells.size % 2 === 0) {
+            draw();
+            await new Promise(r => setTimeout(r, delay));
+          }
+        }
+      } else if (algo === 'dfs') {
+        const stack = [{ r: start.r, c: start.c }];
+
+        while (stack.length > 0) {
+          const curr = stack.pop();
+          const currKey = `${curr.r},${curr.c}`;
+          if (visitedCells.has(currKey)) continue;
+          visitedCells.add(currKey);
+
+          if (curr.r === end.r && curr.c === end.c) {
+            found = true;
+            break;
+          }
+
+          for (const n of getNeighbors(curr.r, curr.c)) {
+            const nKey = `${n.r},${n.c}`;
+            if (!visitedCells.has(nKey)) {
+              parent[nKey] = curr;
+              stack.push(n);
+            }
+          }
+
+          if (visitedCells.size % 2 === 0) {
+            draw();
+            await new Promise(r => setTimeout(r, delay));
+          }
+        }
+      } else { // Dijkstra or A*
+        // Priority queue
+        const pq = [{ r: start.r, c: start.c, g: 0, f: algo === 'astar' ? manhattan(start.r, start.c, end.r, end.c) : 0 }];
+        dist[startKey] = 0;
+
+        while (pq.length > 0) {
+          pq.sort((a, b) => a.f - b.f || a.g - b.g);
+          const curr = pq.shift();
+          const currKey = `${curr.r},${curr.c}`;
+
+          if (visitedCells.has(currKey)) continue;
+          visitedCells.add(currKey);
+
+          if (curr.r === end.r && curr.c === end.c) {
+            found = true;
+            break;
+          }
+
+          for (const n of getNeighbors(curr.r, curr.c)) {
+            const nKey = `${n.r},${n.c}`;
+            const newG = curr.g + n.cost;
+            if (dist[nKey] === undefined || newG < dist[nKey]) {
+              dist[nKey] = newG;
+              parent[nKey] = curr;
+              const h = algo === 'astar' ? manhattan(n.r, n.c, end.r, end.c) : 0;
+              pq.push({ r: n.r, c: n.c, g: newG, f: newG + h });
+            }
+          }
+
+          if (visitedCells.size % 2 === 0) {
+            draw();
+            await new Promise(r => setTimeout(r, delay));
+          }
+        }
+      }
+
+      const t1 = performance.now();
+      let totalCost = 0;
+
+      if (found) {
+        let curr = parent[endKey];
+        while (curr && !(curr.r === start.r && curr.c === start.c)) {
+          const key = `${curr.r},${curr.c}`;
+          pathCells.unshift(key);
+          totalCost += grid[curr.r][curr.c] === 5 ? 5 : 1;
+          curr = parent[key];
+        }
+        totalCost += 1; // destination step
+      }
+
+      draw();
+      updateStats(visitedCells.size, pathCells.length, totalCost, t1 - t0);
+      isRunning = false;
+    }
+
+    function generateMaze() {
+      if (isRunning) return;
+      initGrid();
+      // Generate recursive division or cellular random maze
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if ((r === start.r && c === start.c) || (r === end.r && c === end.c)) continue;
+          const rand = Math.random();
+          if (rand < 0.26) grid[r][c] = 1; // wall
+          else if (rand < 0.36) grid[r][c] = 5; // weighted terrain
+        }
+      }
+      draw();
+    }
+
+    function getCellCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const c = Math.floor(x / CELL_SIZE);
+      const r = Math.floor(y / CELL_SIZE);
+      return { r: Math.max(0, Math.min(ROWS - 1, r)), c: Math.max(0, Math.min(COLS - 1, c)) };
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (isRunning) return;
+      const { r, c } = getCellCoords(e);
+      isMouseDown = true;
+
+      if (r === start.r && c === start.c) dragging = 'start';
+      else if (r === end.r && c === end.c) dragging = 'end';
+      else {
+        dragging = null;
+        applyTool(r, c);
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      isMouseDown = false;
+      dragging = null;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!isMouseDown || isRunning) return;
+      const { r, c } = getCellCoords(e);
+
+      if (dragging === 'start') {
+        if (!(r === end.r && c === end.c)) {
+          start = { r, c };
+          draw();
+        }
+      } else if (dragging === 'end') {
+        if (!(r === start.r && c === start.c)) {
+          end = { r, c };
+          draw();
+        }
+      } else {
+        applyTool(r, c);
+      }
+    });
+
+    function applyTool(r, c) {
+      if ((r === start.r && c === start.c) || (r === end.r && c === end.c)) return;
+      const tool = document.getElementById('tool-select').value;
+      if (tool === 'wall') grid[r][c] = 1;
+      else if (tool === 'weight') grid[r][c] = 5;
+      else if (tool === 'erase') grid[r][c] = 0;
+      draw();
+    }
+
+    document.getElementById('btn-visualize').addEventListener('click', runSearch);
+    document.getElementById('btn-clear-path').addEventListener('click', () => {
+      if (isRunning) return;
+      visitedCells.clear();
+      pathCells = [];
+      updateStats(0, 0, 0, 0);
+      draw();
+    });
+    document.getElementById('btn-clear-all').addEventListener('click', () => {
+      if (isRunning) return;
+      initGrid();
+    });
+    document.getElementById('btn-maze').addEventListener('click', generateMaze);
+
+    initGrid();
+  </script>
+</body>
+</html>
